@@ -7,33 +7,33 @@ how to use this file.
 
 To view how to use any of these tasks, run fab -d COMMAND
 """
+
 from fabric.api import *
-from fabric.contrib.project import rsync_project
 from fabric.context_managers import settings
 from fabric.contrib.files import contains, exists
+from fabric.contrib.project import rsync_project
 from os import getcwd
-
 
 env.forward_agent = True
 env.name = None
 env.new_relic = False
-env.repository = 'git@github.com:titansgroup/tss-faturamento.git'
-env.user = 'deployer'
+env.repository = 'git@github.com:vcalixto/mage18.git'
+env.user = 'u561770625'
 env.group = 'deployer'
 env.user_home = '/home/%s' % env.user
 env.hosts = []
-env.src_path = '%s/tss-faturamento' % env.user_home
+env.src_path = '%s/public_html' % env.user_home
 
 
 def production():
     env.name = 'production'
-    env.hosts = ['201.20.34.987']
+    env.hosts = ['31.170.160.77']
     env.group = 'users'
 
 
 def staging():
     env.name = 'staging'
-    env.hosts = ['']
+    env.hosts = ['31.170.160.79']
     env.group = 'www-data'
 
 
@@ -43,13 +43,8 @@ def localhost():
     env.src_path = '/var/www/mage18'
 
 
-@task
 def deploy(commit='master'):
     "deploy the code to servers yeah!"
-    rsync_project(env.deploy_to,getcwd() + '/',["media","var",".git",".gitignore","app/etc/local.xml","*.py*","sitemap"],True,"-pthrvzL")
-     """
-    Deploy the app in the server
-    """
     if not env.name:
         raise Exception(u'You MUST set the environment variable.')
 
@@ -91,8 +86,8 @@ def deploy(commit='master'):
                 run('git merge origin/%s' % commit)
 
     sudo('chown -R %s:%s %s' % (env.user, env.group, env.src_path))
+    rsync_project(env.env.src_path,getcwd() + '/',["media","var",".git",".gitignore","app/etc/local.xml","*.py*","sitemap"],True,"-pthrvzL")
 
-@task
 def indexer(status=False,mode=False,mode_realtime=False,mode_manual=False,reindex=False):
     """
     Run index.php with your options
@@ -106,9 +101,12 @@ def indexer(status=False,mode=False,mode_realtime=False,mode_manual=False,reinde
 
     Usage:
 
-        fab production status:status='catalog_url'
+        fab production indexer:status='catalog_url'
     """
-    with cd(env.deploy_to):
+    if not env.name:
+       raise Exception(u'You MUST set the environment variable.')
+    
+    with cd(env.src_path):
         if status:
             run('php shell/indexer.php --status %s' % status)
         if mode:
@@ -120,90 +118,66 @@ def indexer(status=False,mode=False,mode_realtime=False,mode_manual=False,reinde
         if reindex:
             run('php shell/indexer.php --reindex %s' % reindex)
 
-@task
+
 def indexer_info():
     """
     Show allowed indexers
     """
 
-@task
+
 def indexer_reindexall():
   """
   Reindex Data by all indexers
   """
-  with cd(env.deploy_to):
+  if not env.name:
+       raise Exception(u'You MUST set the environment variable.')
+  with cd(env.src_path):
     run('php shell/indexer.php reindexall')
 
-@task
+
 def log_status():
   """
   Display statistics per log tables
   """
-  with cd(env.deploy_to):
+  if not env.name:
+       raise Exception(u'You MUST set the environment variable.')
+  with cd(env.src_path):
     run('php shell/log.php status')
 
-@task
+
 def log_clean(days=0):
   """
   Clean Logs
 
   Usage:
 
-      fab production magento.log_clean
+      fab production log_clean
 
   If you want to save the log files, you can pass the number of days to save the
   log files, for example:
 
-      fab production magento.log_clean:7
+      fab production log_clean:7
   """
-  with cd(env.deploy_to):
+  if not env.name:
+       raise Exception(u'You MUST set the environment variable.')
+  with cd(env.src_path):
     if days > 0 and days.isdigit():
         run('php shell/log.php clean --days %s' % days)
     else:
         run('php shell/log.php clean')
 
-@task
-def compiler_state():
-    """
-    Show Compilation State
-    """
 
-@task
-def compiler_compile():
-    """
-    Run Compilation Process
-    """
-
-@task
-def compiler_clear():
-    """
-    Disable Compiler include path and Remove compiled files
-    """
-
-@task
-def compiler_enable():
-    """
-    Enable Compiler include path
-    """
-
-@task
-def compiler_disable():
-    """
-    Disable Compiler include path
-    """
-
-@task
 def install(version="1.8.0.0",localhost=False):
     """
-    This task will install magento on the server
+    Task will install magento
 
-    Usage:
+    Eg:
 
-        fab production magento.install:version="1.6.1.0"
+        fab production install:version="1.8.0.0"
 
-    To install on your localhost, run this command:
+    Localhost, run this command:
 
-        fab magento.install:localhost=True
+        fab install:localhost=True
     """
     print 'All questions have defaults, update them if you want to change them'
     install_str = ''
@@ -283,3 +257,4 @@ def install(version="1.8.0.0",localhost=False):
         run('rm -rf index.php.sample .htaccess.sample php.ini.sample LICENSE.txt STATUS.txt')
         run('php install.php -- %s' % install_str)
         run('rm install.php')
+
