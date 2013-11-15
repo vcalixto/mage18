@@ -21,3 +21,5 @@ source/app/code/local/Unleaded/Homepage/etc/_svn/
 .project
 .buildpath
 .settings/
+/nbproject/private/
+nbproject/
