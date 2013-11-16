@@ -44,7 +44,7 @@ def localhost():
 
 
 def deploy(commit='master'):
-    "deploy the code to servers yeah!"
+    "deploy the code to servers yeah! - USAGE fab environment deploy:tag(1.0.0)"
     if not env.name:
         raise Exception(u'You MUST set the environment variable.')
 
